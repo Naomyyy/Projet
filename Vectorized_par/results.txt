@@ -1,0 +1,112 @@
+
+N THREADS = 1
+
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.2566 s
+
+===== RESULTATS DE PERFORMANCE =====
+Temps total déplacement des fourmis : 5781.72 ms
+Temps total evaporation pheromones : 1200.49 ms
+Temps total update pheromones : 22.6203 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 2.23664 ms
+Evaporation : 0.464404 ms
+Update pheromones : 0.00875059 ms
+
+==============================
+Executando com N THREADS = 2
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.2176 s
+
+===== RESULTATS DE PERFORMANCE =====
+Temps total déplacement des fourmis : 4027.83 ms
+Temps total evaporation pheromones : 1255.97 ms
+Temps total update pheromones : 11.2039 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 1.55815 ms
+Evaporation : 0.485868 ms
+Update pheromones : 0.00433418 ms
+==============================
+
+==============================
+Executando com N THREADS = 4
+
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.4034 s
+
+===== RESULTATS DE PERFORMANCE =====
+Temps total déplacement des fourmis : 2595.99 ms
+Temps total evaporation pheromones : 1534.09 ms
+Temps total update pheromones : 18.9899 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 1.00425 ms
+Evaporation : 0.593457 ms
+Update pheromones : 0.00734618 ms
+naomy@naomy-Aspire-A515-45:~/ensta/b2/p
+
+==============================
+Executando com N THREADS = 6
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.1337 s
+
+===== RESULTATS DE PERFORMANCE =====
+Temps total déplacement des fourmis : 1981.15 ms
+Temps total evaporation pheromones : 1562.31 ms
+Temps total update pheromones : 13.5766 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 0.766401 ms
+Evaporation : 0.604377 ms
+Update pheromones : 0.00525208 ms
+==============================
+
+==============================
+Executando com N THREADS = 10
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.2086 s
+
+===== RESULTATS DE PERFORMANCE =====
+Temps total déplacement des fourmis : 1573.26 ms
+Temps total evaporation pheromones : 1792.22 ms
+Temps total update pheromones : 15.6375 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 0.60861 ms
+Evaporation : 0.693316 ms
+Update pheromones : 0.00604931 ms
+==============================
+
+==============================
+Executando com N THREADS = 14
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.2478 s
+
+===== RESULTATS DE PERFORMANCE =====
+Temps total déplacement des fourmis : 1710.82 ms
+Temps total evaporation pheromones : 1798.17 ms
+Temps total update pheromones : 17.3451 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 0.661825 ms
+Evaporation : 0.695618 ms
+Update pheromones : 0.00670992 ms
+==============================
+
+==============================
+Executando com N THREADS = 16
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.4851 s
+
+===== RESULTATS DE PERFORMANCE =====
+Temps total déplacement des fourmis : 5874.92 ms
+Temps total evaporation pheromones : 1691.49 ms
+Temps total update pheromones : 17.3053 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 2.2727 ms
+Evaporation : 0.654348 ms
+Update pheromones : 0.00669452 ms
+==============================

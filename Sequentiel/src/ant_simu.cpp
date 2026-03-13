@@ -10,15 +10,43 @@
 
 #include <chrono> // Pour mesurer le temps d'exécution
 
+
+// ----- Variables globales pour accumuler les temps -----
+using clock_type = std::chrono::high_resolution_clock;
+double total_time_move = 0.0;
+double total_time_evap = 0.0;
+double total_time_update = 0.0;
+
+
 void advance_time( const fractal_land& land, pheronome& phen, 
                    const position_t& pos_nest, const position_t& pos_food,
                    std::vector<ant>& ants, std::size_t& cpteur )
 {
+    // ----- Mesure du temps du déplacement des fourmis -----
+    auto t1 = clock_type::now();
     for ( size_t i = 0; i < ants.size(); ++i )
         ants[i].advance(phen, land, pos_food, pos_nest, cpteur);
+    auto t2 = clock_type::now();
+
+    // ----- Mesure du temps d'évaporation des phéromones -----
     phen.do_evaporation();
+    auto t3 = clock_type::now();
+
+    // ----- Mesure du temps de mise à jour des phéromones -----
     phen.update();
+    auto t4 = clock_type::now();
+
+    // Calcul des durées en millisecondes
+    double move_time = std::chrono::duration<double, std::milli>(t2 - t1).count();
+    double evap_time = std::chrono::duration<double, std::milli>(t3 - t2).count();
+    double update_time = std::chrono::duration<double, std::milli>(t4 - t3).count();
+
+    // Accumulation des temps totaux
+    total_time_move += move_time;
+    total_time_evap += evap_time;
+    total_time_update += update_time;
 }
+
 
 int main(int nargs, char* argv[])
 {
@@ -70,60 +98,45 @@ int main(int nargs, char* argv[])
     bool not_food_in_nest = true;
     std::size_t it = 0;
 
-    // ... (reste du main avant la boucle)
+    // Démarrage du chronomètre global
+    auto start_time = clock_type::now(); // Démarrage du chronomètre global
 
-    // 1. Nous définissons une limite d'itérations pour que le test soit équitable
-    const std::size_t MAX_ITERATIONS = 4000; 
-    
-    // Variables pour accumuler le temps total du test
-    double total_time_logic = 0.0;
-    double total_time_render = 0.0;
-
-    std::cout << "Lancement du benchmark pour " << MAX_ITERATIONS << " iterations..." << std::endl;
-
-    // 2. La boucle s'arrête désormais automatiquement à MAX_ITERATIONS
-    while (cont_loop && it < MAX_ITERATIONS) {
+    while (cont_loop) {
         ++it;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT)
                 cont_loop = false;
         }
-
-        // --- DÉBUT DU CHRONOMÈTRE DE LA LOGIQUE ---
-        auto start_logic = std::chrono::high_resolution_clock::now();
-
         advance_time( land, phen, pos_nest, pos_food, ants, food_quantity );
-
-        // --- FIN DE LA LOGIQUE / DÉBUT DU RENDU ---
-        auto end_logic = std::chrono::high_resolution_clock::now();
-
         renderer.display( win, food_quantity );
         win.blit();
-
-        // --- FIN DU RENDU ---
-        auto end_render = std::chrono::high_resolution_clock::now();
-
-        // Calcul de la différence em secondes et ajout au total
-        std::chrono::duration<double> diff_logic = end_logic - start_logic;
-        std::chrono::duration<double> diff_render = end_render - end_logic;
-
-        total_time_logic += diff_logic.count();
-        total_time_render += diff_render.count();
-
-        // Notification de l'arrivée de la nourriture (gardé de l'original)
         if ( not_food_in_nest && food_quantity > 0 ) {
-            std::cout << "La premiere nourriture est arrivee au nid a l'iteration " << it << std::endl;
+           auto end_time = clock_type::now(); // Fin du chronomètre global
+           double elapsed_time = std::chrono::duration<double>(end_time - start_time).count();
+           
+            std::cout << "La première nourriture est arrivée au nid a l'iteration " << it << std::endl;
             not_food_in_nest = false;
+
+            std::cout << "Temps écoulé depuis le début : " << elapsed_time << " s" << std::endl;
+            
+
+            cont_loop = false; // Arrêt de la simulation après la première arrivée de nourriture au nid
         }
+        //SDL_Delay(10);
     }
-
-    // 3. Affichage du résultat officiel à la fin du test
-    std::cout << "\n=== RÉSULTATS DU BENCHMARK SÉQUENTIEL ===" << std::endl;
-    std::cout << "Iterations completees : " << it << std::endl;
-    std::cout << "Temps Total Logique (CPU) : " << total_time_logic << " secondes" << std::endl;
-    std::cout << "Temps Total Rendu : " << total_time_render << " secondes" << std::endl;
-    std::cout << "==========================================" << std::endl;
-
     SDL_Quit();
+
+       // ----- Affichage des temps totaux et moyens -----
+    std::cout << "\n===== RESULTATS DE PERFORMANCE =====" << std::endl;
+    std::cout << "Temps total déplacement des fourmis : " << total_time_move << " ms" << std::endl;
+    std::cout << "Temps total evaporation pheromones : " << total_time_evap << " ms" << std::endl;
+    std::cout << "Temps total update pheromones : " << total_time_update << " ms" << std::endl;
+
+    std::cout << "\nTemps moyen par iteration :" << std::endl;
+    std::cout << "Deplacement fourmis : " << total_time_move / it << " ms" << std::endl;
+    std::cout << "Evaporation : " << total_time_evap / it << " ms" << std::endl;
+    std::cout << "Update pheromones : " << total_time_update / it << " ms" << std::endl;
+
+
     return 0;
 }

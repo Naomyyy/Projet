@@ -19,7 +19,10 @@ public:
 
     bool is_loaded() const { return states[m_id] == loaded; }
 
-    position_t get_position() const { return {xs[m_id], ys[m_id]}; }
+    position_t get_position() const
+{
+    return position_t{xs[m_id], ys[m_id]};
+}
 
     static void set_exploration_coef(double eps) { m_eps = eps; }
 
@@ -41,6 +44,6 @@ private:
     static std::vector<int> ys;
     static std::vector<state> states;
     static std::vector<std::size_t> seeds;
-};
+    };
 
 #endif
