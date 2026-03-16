@@ -12,7 +12,12 @@
 \usepackage{amsmath}
 
 \title{\textbf{Optimisation par Colonie de Fourmis d'un Chemin sur un Paysage Fractal} \\ \Large Rapport de Parallélisation (OpenMP \& MPI)}
-\author{Naomy Isabela GOMES BIAGGI}
+\author{
+    Alfredo QUINTELLA PINTO
+    \and
+    Felipe BIASUZ CORDEIRO
+    \and
+    Naomy Isabela GOMES BIAGGI}
 \date{\today}
 
 \begin{document}
@@ -20,66 +25,178 @@
 \maketitle
 
 \section{Introduction}
-Ce rapport présente les résultats de l'optimisation et de la parallélisation d'un algorithme de colonie de fourmis (ACO) conçu pour trouver le chemin le plus court sur un terrain fractal. L'objectif principal est de réduire le temps de calcul du déplacement des fourmis et de l'évaporation des phéromones en utilisant des techniques de parallélisation en mémoire partagée (OpenMP) et en mémoire distribuée (MPI).
 
-\section{Profilage de la version séquentielle}
-Avant toute parallélisation, une analyse de performance a été réalisée à l'aide de l'outil \texttt{gprof} sur la version vectorisée du code.
+Ce rapport présente l’optimisation et la parallélisation d’un algorithme de colonie de fourmis (Ant Colony Optimization, ACO) appliqué à la recherche d’un chemin optimal sur un terrain fractal. L’objectif principal est de réduire le temps de calcul de la simulation en exploitant différentes formes de parallélisme.
 
-Les résultats du \textit{flat profile} montrent que la majorité du temps d'exécution est concentrée sur une seule fonction :
+Deux approches de calcul parallèle ont été étudiées :
+
 \begin{itemize}
-    \item \texttt{ant::advance} : \textbf{61.48 \%} du temps total.
-    \item \texttt{Renderer::display} : 26.70 \% (Temps lié à l'affichage graphique).
-    \item \texttt{advance\_time} : 11.24 \%.
+\item la parallélisation en mémoire partagée avec OpenMP,
+\item la parallélisation en mémoire distribuée avec MPI.
 \end{itemize}
 
-Le temps moyen par itération pour le déplacement séquentiel était de 2.48 ms. Il est donc évident que la parallélisation doit se concentrer en priorité sur la boucle de déplacement des fourmis dans \texttt{advance\_time}.
+Le travail a consisté à identifier les sections critiques du code, vectoriser les structures de données puis paralléliser les parties les plus coûteuses en temps de calcul.
+
+\section{Modèle de Colonies de Fourmis}
+
+Le modèle utilisé simule un ensemble de fourmis artificielles évoluant sur une grille 2D représentant l’environnement. Chaque cellule de la grille possède une valeur indiquant le coût temporel de traversée du terrain.
+
+Deux types de phéromones sont utilisés :
+
+\begin{itemize}
+\item $V_1(s)$ : phéromone d’exploration indiquant les chemins menant vers la nourriture.
+\item $V_2(s)$ : phéromone indiquant le chemin de retour vers la fourmilière.
+\end{itemize}
+
+Chaque fourmi peut être dans deux états :
+
+\begin{itemize}
+\item non chargée (recherche de nourriture),
+\item chargée (retour vers la fourmilière).
+\end{itemize}
+
+À chaque itération, une fourmi :
+
+\begin{enumerate}
+\item met à jour les valeurs de phéromones de la cellule courante en fonction des cellules voisines,
+\item choisit une cellule voisine vers laquelle se déplacer,
+\item met à jour son état si elle atteint la nourriture ou la fourmilière.
+\end{enumerate}
+
+Le déplacement est déterminé de manière probabiliste :
+
+\begin{itemize}
+\item avec une probabilité $\varepsilon$, la fourmi explore une direction aléatoire,
+\item avec une probabilité $1-\varepsilon$, elle suit la cellule ayant la concentration de phéromone la plus élevée.
+\end{itemize}
+
+Les phéromones subissent également un phénomène d’évaporation à chaque itération.
+
+\section{Vectorisation du Modèle}
+
+Afin de préparer le code à la parallélisation, les structures de données représentant les fourmis ont été vectorisées.
+
+Initialement, chaque fourmi pouvait être représentée par une structure contenant ses propriétés. Dans la version optimisée, les données ont été transformées en une structure de tableaux (Structure of Arrays).
+
+Les propriétés suivantes sont stockées dans des vecteurs :
+
+\begin{itemize}
+\item position $x$ des fourmis,
+\item position $y$ des fourmis,
+\item état de chaque fourmi,
+\item graine du générateur aléatoire.
+\end{itemize}
+
+Cette organisation permet :
+
+\begin{itemize}
+\item une meilleure localité mémoire,
+\item une vectorisation plus efficace par le compilateur,
+\item une parallélisation plus simple des boucles sur les fourmis.
+\end{itemize}
+
+\section{Structure du Code}
+
+L’architecture du programme repose sur plusieurs classes principales :
+
+\begin{itemize}
+\item \textbf{ants} : gestion des positions, états et déplacements des fourmis.
+\item \textbf{pheromone} : stockage et mise à jour des phéromones sur la grille.
+\item \textbf{fractal\_land} : génération du terrain fractal et gestion des coûts de déplacement.
+\end{itemize}
+
+La fonction principale responsable de l’évolution de la simulation est \texttt{advance\_time}, qui appelle la fonction \texttt{ant::advance} pour chaque fourmi.
+
+\section{Profilage de la Version Séquentielle}
+
+Une analyse de performance a été réalisée à l’aide de l’outil \texttt{gprof}.
+
+Le profil plat indique que la majorité du temps d’exécution est concentrée dans la fonction responsable du déplacement des fourmis :
+
+\begin{itemize}
+\item \texttt{ant::advance} : \textbf{61.48 \%} du temps total
+\item \texttt{Renderer::display} : 26.70 \%
+\item \texttt{advance\_time} : 11.24 \%
+\end{itemize}
+
+Le temps moyen par itération pour le déplacement séquentiel était de 2.48 ms.
+
+Ces résultats montrent que la parallélisation doit se concentrer en priorité sur la boucle de déplacement des fourmis.
 
 \section{Parallélisation en Mémoire Partagée (OpenMP)}
-La boucle de déplacement des fourmis a été parallélisée en utilisant la directive \texttt{\#pragma omp parallel for schedule(guided)}. L'utilisation de directives \texttt{atomic} a été nécessaire pour éviter les conditions de course (data race) lors de la mise à jour des phéromones, notamment au début de la simulation lorsque toutes les fourmis se trouvent dans le nid.
+
+La boucle principale traitant les fourmis a été parallélisée avec la directive :
+
+\begin{verbatim}
+#pragma omp parallel for schedule(guided)
+\end{verbatim}
+
+Le choix de la politique \texttt{guided} permet une meilleure répartition dynamique de la charge de travail entre les threads. En effet, certaines fourmis peuvent effectuer plus d’opérations que d’autres selon leur position et l’état du terrain.
+
+L'utilisation de directives \texttt{atomic} a été nécessaire pour éviter les conditions de course (data race) lors de la mise à jour des phéromones, notamment au début de la simulation lorsque toutes les fourmis se trouvent dans le nid.
 
 \subsection{Résultats de Performance}
-Le tableau \ref{tab:omp} présente le temps de déplacement total des fourmis (pour 2585 itérations) en fonction du nombre de threads. Le Speedup ($S$) est calculé par rapport à l'exécution avec 1 thread (5781.72 ms).
+Le tableau 1 présente le temps de déplacement total des fourmis (pour 2585 itérations) en fonction du nombre de threads. Le Speedup ($S$) est calculé par rapport à l'exécution avec 1 thread (5781.72 ms).
 
 \begin{table}[H]
-    \centering
-    \begin{tabular}{@{}cccc@{}}
-        \toprule
-        \textbf{Nombre de Threads} & \textbf{Temps Déplacement (ms)} & \textbf{Speedup ($S$)} & \textbf{Temps Évaporation (ms)} \\ \midrule
-        1  & 5781.72 & 1.00x & 1200.49 \\
-        2  & 4027.83 & 1.43x & 1255.97 \\
-        4  & 2595.99 & 2.22x & 1534.09 \\
-        6  & 1981.15 & 2.91x & 1562.31 \\
-        10 & 1573.26 & \textbf{3.67x} & 1792.22 \\
-        14 & 1710.82 & 3.37x & 1798.17 \\
-        16 & 5874.92 & 0.98x & 1691.49 \\ \bottomrule
-    \end{tabular}
-    \caption{Performances OpenMP pour le déplacement des fourmis.}
-    \label{tab:omp}
+\centering
+\begin{tabular}{cccc}
+\toprule
+Threads & Temps déplacement (ms) & Speedup & Temps évaporation (ms) \\
+\midrule
+1 & 5781.72 & 1.00 & 1200.49 \\
+2 & 4027.83 & 1.43 & 1255.97 \\
+4 & 2595.99 & 2.22 & 1534.09 \\
+6 & 1981.15 & 2.91 & 1562.31 \\
+10 & 1573.26 & \textbf{3.67} & 1792.22 \\
+14 & 1710.82 & 3.37 & 1798.17 \\
+16 & 5874.92 & 0.98 & 1691.49 \\
+\bottomrule
+\end{tabular}
+\caption{Performances OpenMP}
 \end{table}
 
-\subsection{Analyse OpenMP}
-L'accélération est significative et quasi-linéaire jusqu'à 10 threads, atteignant un pic de performance de \textbf{3.67x}. Cependant, à partir de 14 threads, les performances se dégradent, et avec 16 threads, le temps d'exécution devient équivalent à la version séquentielle. Cela s'explique par la contention matérielle (limite de cœurs physiques et hyperthreading) et la surcharge causée par les opérations \texttt{atomic} : trop de threads tentent de modifier la même zone mémoire simultanément.
+\subsection{Analyse avec la loi d’Amdahl}
 
-Il est également intéressant de noter que le temps d'évaporation augmente légèrement avec le nombre de threads. L'évaporation est limitée par la bande passante mémoire (Memory Bound), l'ajout de threads crée donc un goulot d'étranglement sur le bus mémoire.
+La loi d’Amdahl permet d’expliquer la saturation du speedup :
+
+\[
+S(N) = \frac{1}{(1-p) + \frac{p}{N}}
+\]
+
+où $p$ représente la fraction parallélisable du programme.
+
+Dans notre cas, certaines parties du code restent séquentielles (gestion des phéromones, synchronisation), ce qui limite le gain maximal.
+
+La forte dégradation observée avec 16 threads s’explique principalement par :
+
+\begin{itemize}
+\item la contention mémoire sur les variables partagées,
+\item le coût des opérations \texttt{atomic},
+\item la saturation de la bande passante mémoire.
+\end{itemize}
 
 \section{Parallélisation en Mémoire Distribuée (MPI)}
+
 Pour la parallélisation MPI, la première stratégie proposée a été implémentée : chaque processus conserve la carte entière mais ne gère qu'une fraction des fourmis. À la fin de chaque itération, une réduction globale (\texttt{MPI\_Allreduce} avec l'opérateur \texttt{MPI\_MAX}) est effectuée pour synchroniser la carte des phéromones entre tous les processus.
 
-\subsection{Résultats de Performance}
+\subsection{Résultats}
 
 \begin{table}[H]
-    \centering
-    \begin{tabular}{@{}ccc@{}}
-        \toprule
-        \textbf{Nombre de Processus} & \textbf{Temps Déplacement (ms)} & \textbf{Temps Évaporation / Sync (ms)} \\ \midrule
-        2 & 3287.85 & 3791.86 \\
-        3 & \textbf{1963.10} & 3890.58 \\
-        4 & 2701.99 & 5479.22 \\
-        6 & 7219.13 & 8489.75 \\
-        8 & 17792.30 & 14872.80 \\ \bottomrule
-    \end{tabular}
-    \caption{Performances MPI pour le déplacement et la synchronisation.}
-    \label{tab:mpi}
+\centering
+\begin{tabular}{cccc}
+\toprule
+Processus & Temps déplacement (ms) & Speedup & Temps communication (ms) \\
+\midrule
+1 & 5781.72 & 1.00 & - \\
+2 & 3287.85 & 1.76 & 3791.86 \\
+3 & 1963.10 & \textbf{2.94} & 3890.58 \\
+4 & 2701.99 & 2.14 & 5479.22 \\
+6 & 7219.13 & 0.80 & 8489.75 \\
+8 & 17792.30 & 0.32 & 14872.80 \\
+\bottomrule
+\end{tabular}
+\caption{Performances MPI}
 \end{table}
 
 \subsection{Analyse MPI}
@@ -88,6 +205,11 @@ Le modèle MPI offre d'excellentes performances pour le calcul strict du déplac
 Néanmoins, l'architecture révèle rapidement son point faible : \textbf{le coût des communications}. À partir de 4 processus, le temps d'exécution explose. Avec 8 processus, l'évaporation et la synchronisation prennent près de 15 secondes. Cela s'explique par la taille de la carte des phéromones. Lors de l'appel à \texttt{MPI\_Allreduce}, une quantité massive de données (plusieurs mégaoctets par itération) doit transiter par le réseau ou la mémoire partagée du système, transformant l'application en un problème fortement limité par les communications (Network Bound).
 
 \section{Conclusion}
-Ce projet met en évidence les compromis classiques du calcul haute performance (HPC). OpenMP s'est révélé être l'approche la plus efficace pour ce problème précis grâce à un espace mémoire unifié évitant les lourdes copies de données. L'approche MPI pure, bien qu'efficace pour diviser la charge de calcul, est sévèrement pénalisée par le transfert de données globales. Une solution future pertinente serait une approche hybride (MPI + OpenMP), limitant le nombre de processus MPI pour réduire les communications, tout en maximisant les threads OpenMP par processus pour accélérer le déplacement.
+
+Ce projet illustre les compromis classiques du calcul haute performance entre parallélisme de calcul et coût de communication.
+
+La parallélisation OpenMP s’est révélée la plus efficace pour ce problème, avec un speedup maximal de \textbf{3.67x}. L’approche MPI permet également d’accélérer le calcul lorsque le nombre de processus reste faible, mais elle devient rapidement limitée par le coût des communications globales.
+
+Une amélioration future consisterait à utiliser une approche hybride MPI + OpenMP, permettant de limiter le nombre de processus MPI tout en exploitant efficacement les cœurs de calcul disponibles via le multithreading.
 
 \end{document}
