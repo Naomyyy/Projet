@@ -1,0 +1,64 @@
+----- Lancement de la simulation avec 2 processus MPI ---
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.5743 s
+
+===== RESULTATS DE PERFORMANCE (Rank 0) =====
+Temps total déplacement des fourmis : 3287.85 ms
+Temps total evaporation pheromones : 3791.86 ms
+Temps total update pheromones : 32.42 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 1.2719 ms
+Evaporation : 1.46687 ms
+
+--- Lancement de la simulation avec 3 processus MPI ---
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.467 s
+
+===== RESULTATS DE PERFORMANCE (Rank 0) =====
+Temps total déplacement des fourmis : 1963.1 ms
+Temps total evaporation pheromones : 3890.58 ms
+Temps total update pheromones : 31.6029 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 0.759419 ms
+Evaporation : 1.50506 ms
+
+--- Lancement de la simulation avec 4 processus MPI ---
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 86.7554 s
+
+===== RESULTATS DE PERFORMANCE (Rank 0) =====
+Temps total déplacement des fourmis : 2701.99 ms
+Temps total evaporation pheromones : 5479.22 ms
+Temps total update pheromones : 57.5262 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 1.04526 ms
+Evaporation : 2.11962 ms
+
+-- Lancement de la simulation avec 6 processus MPI ---
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 119.32 s
+
+===== RESULTATS DE PERFORMANCE (Rank 0) =====
+Temps total déplacement des fourmis : 7219.13 ms
+Temps total evaporation pheromones : 8489.75 ms
+Temps total update pheromones : 76.3695 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 2.7927 ms
+Evaporation : 3.28423 ms
+
+--- Lancement de la simulation avec 8 processus MPI ---
+La première nourriture est arrivée au nid à l'iteration 2585
+Temps écoulé depuis le début : 153.651 s
+
+===== RESULTATS DE PERFORMANCE (Rank 0) =====
+Temps total déplacement des fourmis : 17792.3 ms
+Temps total evaporation pheromones : 14872.8 ms
+Temps total update pheromones : 144.528 ms
+
+Temps moyen par iteration :
+Deplacement fourmis : 6.88289 ms
+Evaporation : 5.7535 ms
