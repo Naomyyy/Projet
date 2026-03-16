@@ -1,46 +1,39 @@
+// ant.hpp
 #ifndef _ANT_HPP_
-#define _ANT_HPP_
-
-#include <vector>
-#include "pheronome.hpp"
-#include "fractal_land.hpp"
-#include "basic_types.hpp"
+# define _ANT_HPP_
+# include <utility>
+# include "pheronome.hpp"
+# include "fractal_land.hpp"
+# include "basic_types.hpp"
 
 class ant
 {
 public:
-
+    /**
+     * Une fourmi peut être dans deux états possibles : chargée ( elle porte de la nourriture ) ou non chargée
+     */
     enum state { unloaded = 0, loaded = 1 };
+    ant(const position_t& pos, std::size_t seed ) : m_state(unloaded), m_position(pos)
+    {} 
+    ant(const ant& a) = default;
+    ant( ant&& a ) = default;
+    ~ant() = default;
 
-    ant(const position_t& pos, std::size_t seed);
+    void set_loaded() { m_state = loaded; }
+    void unset_loaded() { m_state = unloaded; }
 
-    void set_loaded() { states[m_id] = loaded; }
-    void unset_loaded() { states[m_id] = unloaded; }
-
-    bool is_loaded() const { return states[m_id] == loaded; }
-
-    position_t get_position() const { return {xs[m_id], ys[m_id]}; }
-
+    bool is_loaded() const { return m_state == loaded; }
+    const position_t& get_position() const { return m_position; }
     static void set_exploration_coef(double eps) { m_eps = eps; }
 
-    void advance( pheronome& phen,
-                  const fractal_land& land,
-                  const position_t& pos_food,
-                  const position_t& pos_nest,
-                  std::size_t& cpteur_food );
+    void advance( pheronome& phen, const fractal_land& land,
+                  const position_t& pos_food, const position_t& pos_nest, std::size_t& cpteur_food );
 
 private:
-
-    // index de la fourmi
-    std::size_t m_id;
-
-    static double m_eps;
-
-    // stockage vectorisé des données
-    static std::vector<int> xs;
-    static std::vector<int> ys;
-    static std::vector<state> states;
-    static std::vector<std::size_t> seeds;
+    static double m_eps; // Coefficient d'exploration commun à toutes les fourmis.
+    std::size_t m_seed;
+    state m_state;
+    position_t m_position;
 };
 
 #endif
